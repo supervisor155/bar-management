@@ -3,9 +3,11 @@ import { View, StyleSheet, ScrollView } from 'react-native';
 import { List, Divider, Avatar, Card, Text, Button } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useAuth } from '../context/AuthContext';
+import { useNavigation } from '@react-navigation/native';
 
 export default function SettingsScreen() {
   const { user, logout } = useAuth();
+  const navigation = useNavigation();
 
   const handleLogout = () => {
     logout();
@@ -31,6 +33,42 @@ export default function SettingsScreen() {
 
       {/* Settings Sections */}
       <List.Section>
+        {user?.role === 'owner' && (
+          <>
+            <List.Subheader>Management</List.Subheader>
+
+            <List.Item
+              title="User Management"
+              description="Add, edit, and manage users"
+              left={(props) => <List.Icon {...props} icon="account-group" />}
+              right={(props) => <List.Icon {...props} icon="chevron-right" />}
+              onPress={() => navigation.navigate('Users')}
+            />
+
+            <List.Item
+              title="Product Management"
+              description="Add, edit, and manage products"
+              left={(props) => <List.Icon {...props} icon="package-variant" />}
+              right={(props) => <List.Icon {...props} icon="chevron-right" />}
+              onPress={() => navigation.navigate('Products')}
+            />
+
+            <Divider />
+          </>
+        )}
+
+        <List.Subheader>Account</List.Subheader>
+
+        <List.Item
+          title="Change Password"
+          description="Update your account password"
+          left={(props) => <List.Icon {...props} icon="lock-reset" />}
+          right={(props) => <List.Icon {...props} icon="chevron-right" />}
+          onPress={() => navigation.navigate('ChangePassword')}
+        />
+
+        <Divider />
+
         <List.Subheader>General</List.Subheader>
 
         <List.Item
@@ -65,12 +103,15 @@ export default function SettingsScreen() {
           right={(props) => <List.Icon {...props} icon="chevron-right" />}
         />
 
-        <List.Item
-          title="Backup & Sync"
-          description="Cloud backup settings"
-          left={(props) => <List.Icon {...props} icon="cloud-upload" />}
-          right={(props) => <List.Icon {...props} icon="chevron-right" />}
-        />
+        {(user?.role === 'owner' || user?.role === 'manager') && (
+          <List.Item
+            title="Export & Backup"
+            description="Export reports and create backups"
+            left={(props) => <List.Icon {...props} icon="database-export" />}
+            right={(props) => <List.Icon {...props} icon="chevron-right" />}
+            onPress={() => navigation.navigate('Backup')}
+          />
+        )}
 
         <Divider />
 

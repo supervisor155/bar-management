@@ -70,7 +70,7 @@ export const createTables = (db) => {
       status TEXT NOT NULL DEFAULT 'pending' CHECK(status IN ('pending', 'preparing', 'ready', 'served', 'cancelled')),
       total_amount REAL DEFAULT 0,
       payment_status TEXT DEFAULT 'unpaid' CHECK(payment_status IN ('unpaid', 'paid', 'partial')),
-      payment_method TEXT CHECK(payment_method IN ('cash', 'card', 'mobile', NULL)),
+      payment_method TEXT CHECK(payment_method IN ('cash', 'card', 'mobile_money', 'credit', NULL)),
       notes TEXT,
       created_by INTEGER NOT NULL,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,

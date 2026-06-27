@@ -13,6 +13,11 @@ import InventoryScreen from '../screens/InventoryScreen';
 import OrdersScreen from '../screens/OrdersScreen';
 import ReportsScreen from '../screens/ReportsScreen';
 import SettingsScreen from '../screens/SettingsScreen';
+import UsersScreen from '../screens/UsersScreen';
+import ProductsScreen from '../screens/ProductsScreen';
+import BackupScreen from '../screens/BackupScreen';
+import ReceiptScreen from '../screens/ReceiptScreen';
+import ChangePasswordScreen from '../screens/ChangePasswordScreen';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -89,11 +94,58 @@ export default function AppNavigator() {
 
   return (
     <NavigationContainer>
-      <Stack.Navigator screenOptions={{ headerShown: false }}>
+      <Stack.Navigator>
         {user ? (
-          <Stack.Screen name="Main" component={MainTabs} />
+          <>
+            <Stack.Screen name="Main" component={MainTabs} options={{ headerShown: false }} />
+            <Stack.Screen
+              name="Users"
+              component={UsersScreen}
+              options={{
+                title: 'User Management',
+                headerStyle: { backgroundColor: '#1976d2' },
+                headerTintColor: '#fff',
+              }}
+            />
+            <Stack.Screen
+              name="Products"
+              component={ProductsScreen}
+              options={{
+                title: 'Product Management',
+                headerStyle: { backgroundColor: '#1976d2' },
+                headerTintColor: '#fff',
+              }}
+            />
+            <Stack.Screen
+              name="Backup"
+              component={BackupScreen}
+              options={{
+                title: 'Export & Backup',
+                headerStyle: { backgroundColor: '#1976d2' },
+                headerTintColor: '#fff',
+              }}
+            />
+            <Stack.Screen
+              name="Receipt"
+              component={ReceiptScreen}
+              options={{
+                title: 'Receipt',
+                headerStyle: { backgroundColor: '#1976d2' },
+                headerTintColor: '#fff',
+              }}
+            />
+            <Stack.Screen
+              name="ChangePassword"
+              component={ChangePasswordScreen}
+              options={{
+                title: 'Change Password',
+                headerStyle: { backgroundColor: '#1976d2' },
+                headerTintColor: '#fff',
+              }}
+            />
+          </>
         ) : (
-          <Stack.Screen name="Login" component={LoginScreen} />
+          <Stack.Screen name="Login" component={LoginScreen} options={{ headerShown: false }} />
         )}
       </Stack.Navigator>
     </NavigationContainer>

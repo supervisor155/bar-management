@@ -1,16 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, ScrollView, RefreshControl } from 'react-native';
-import { Card, Text, Button, Chip, List, Searchbar } from 'react-native-paper';
+import { Card, Text, Button, Chip, List, Searchbar, Portal, Modal, RadioButton, Divider } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { fetchAll, updateRecord } from '../database';
 import { format } from 'date-fns';
+import { useNavigation } from '@react-navigation/native';
 
 export default function OrdersScreen() {
+  const navigation = useNavigation();
   const [orders, setOrders] = useState([]);
   const [filteredOrders, setFilteredOrders] = useState([]);
   const [refreshing, setRefreshing] = useState(false);
   const [filterStatus, setFilterStatus] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const [paymentModal, setPaymentModal] = useState({ visible: false, order: null });
+  const [paymentMethod, setPaymentMethod] = useState('cash');
 
   useEffect(() => {
     loadOrders();
@@ -58,19 +62,39 @@ export default function OrdersScreen() {
   const updateOrderStatus = async (orderId, newStatus) => {
     try {
       await updateRecord('orders', { status: newStatus, updated_at: new Date().toISOString() }, 'id = ?', [orderId]);
-
-      if (newStatus === 'served') {
-        await updateRecord(
-          'orders',
-          { completed_at: new Date().toISOString(), payment_status: 'paid' },
-          'id = ?',
-          [orderId]
-        );
-      }
-
       await loadOrders();
     } catch (error) {
       console.error('Error updating order status:', error);
+    }
+  };
+
+  const openPaymentModal = (order) => {
+    setPaymentModal({ visible: true, order });
+    setPaymentMethod('cash');
+  };
+
+  const closePaymentModal = () => {
+    setPaymentModal({ visible: false, order: null });
+  };
+
+  const processPayment = async () => {
+    try {
+      await updateRecord(
+        'orders',
+        {
+          payment_status: 'paid',
+          payment_method: paymentMethod,
+          completed_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        },
+        'id = ?',
+        [paymentModal.order.id]
+      );
+
+      closePaymentModal();
+      await loadOrders();
+    } catch (error) {
+      console.error('Error processing payment:', error);
     }
   };
 
@@ -214,6 +238,16 @@ export default function OrdersScreen() {
                       Cancel
                     </Button>
                   )}
+                  {order.payment_status === 'unpaid' && order.status === 'served' && (
+                    <Button
+                      mode="contained"
+                      onPress={() => openPaymentModal(order)}
+                      icon="cash-register"
+                      buttonColor="#4caf50"
+                    >
+                      Process Payment
+                    </Button>
+                  )}
                   {getNextStatus(order.status) && (
                     <Button mode="contained" onPress={() => updateOrderStatus(order.id, getNextStatus(order.status))}>
                       Mark as {getNextStatus(order.status)}
@@ -221,10 +255,97 @@ export default function OrdersScreen() {
                   )}
                 </Card.Actions>
               )}
+              {order.payment_status === 'paid' && (
+                <>
+                  <Card.Content>
+                    <Chip
+                      icon="check-circle"
+                      textStyle={{ color: '#4caf50' }}
+                      style={styles.paidChip}
+                    >
+                      Paid via {order.payment_method || 'Cash'}
+                    </Chip>
+                  </Card.Content>
+                  <Card.Actions>
+                    <Button
+                      mode="outlined"
+                      onPress={() => navigation.navigate('Receipt', { orderId: order.id })}
+                      icon="receipt"
+                    >
+                      View Receipt
+                    </Button>
+                  </Card.Actions>
+                </>
+              )}
             </Card>
           ))
         )}
       </ScrollView>
+
+      {/* Payment Modal */}
+      <Portal>
+        <Modal
+          visible={paymentModal.visible}
+          onDismiss={closePaymentModal}
+          contentContainerStyle={styles.paymentModal}
+        >
+          <Text variant="headlineSmall" style={styles.modalTitle}>
+            Process Payment
+          </Text>
+
+          {paymentModal.order && (
+            <View>
+              <Text variant="titleMedium" style={styles.orderDetails}>
+                Order: {paymentModal.order.order_number}
+              </Text>
+              <Text variant="headlineMedium" style={styles.totalAmount}>
+                {formatCurrency(paymentModal.order.total_amount)}
+              </Text>
+
+              <Divider style={styles.divider} />
+
+              <Text variant="titleMedium" style={styles.sectionTitle}>
+                Select Payment Method:
+              </Text>
+
+              <RadioButton.Group onValueChange={setPaymentMethod} value={paymentMethod}>
+                <View style={styles.radioOption}>
+                  <RadioButton value="cash" />
+                  <MaterialCommunityIcons name="cash" size={24} color="#4caf50" style={styles.radioIcon} />
+                  <Text variant="bodyLarge">Cash</Text>
+                </View>
+
+                <View style={styles.radioOption}>
+                  <RadioButton value="card" />
+                  <MaterialCommunityIcons name="credit-card" size={24} color="#2196f3" style={styles.radioIcon} />
+                  <Text variant="bodyLarge">Card (Visa/Mastercard)</Text>
+                </View>
+
+                <View style={styles.radioOption}>
+                  <RadioButton value="mobile_money" />
+                  <MaterialCommunityIcons name="cellphone" size={24} color="#ff9800" style={styles.radioIcon} />
+                  <Text variant="bodyLarge">Mobile Money (MTN/Airtel)</Text>
+                </View>
+
+                <View style={styles.radioOption}>
+                  <RadioButton value="credit" />
+                  <MaterialCommunityIcons name="account-clock" size={24} color="#f44336" style={styles.radioIcon} />
+                  <Text variant="bodyLarge">Credit (Pay Later)</Text>
+                </View>
+              </RadioButton.Group>
+
+              <View style={styles.modalActions}>
+                <Button mode="outlined" onPress={closePaymentModal} style={styles.modalButton}>
+                  Cancel
+                </Button>
+                <Button mode="contained" onPress={processPayment} style={styles.modalButton} icon="check">
+                  Confirm Payment
+                </Button>
+              </View>
+            </View>
+          )}
+        </Modal>
+      </Portal>
     </View>
   );
 }
@@ -289,5 +410,54 @@ const styles = StyleSheet.create({
   emptyText: {
     marginTop: 16,
     color: '#999',
+  },
+  paidChip: {
+    marginTop: 8,
+    borderColor: '#4caf50',
+    borderWidth: 1,
+  },
+  paymentModal: {
+    backgroundColor: '#fff',
+    padding: 24,
+    margin: 20,
+    borderRadius: 8,
+  },
+  modalTitle: {
+    marginBottom: 16,
+    fontWeight: 'bold',
+  },
+  orderDetails: {
+    marginBottom: 8,
+    color: '#666',
+  },
+  totalAmount: {
+    color: '#1976d2',
+    fontWeight: 'bold',
+    marginBottom: 16,
+  },
+  divider: {
+    marginVertical: 16,
+  },
+  sectionTitle: {
+    marginBottom: 16,
+    fontWeight: 'bold',
+  },
+  radioOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+  },
+  radioIcon: {
+    marginLeft: 8,
+    marginRight: 12,
+  },
+  modalActions: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    marginTop: 24,
+    gap: 12,
+  },
+  modalButton: {
+    flex: 1,
   },
 });
