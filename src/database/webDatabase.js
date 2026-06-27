@@ -11,6 +11,8 @@ const storage = {
   orders: [],
   order_items: [],
   stock_movements: [],
+  credit_customers: [],
+  credit_transactions: [],
 };
 
 export const initDatabase = async () => {
@@ -141,6 +143,23 @@ export const fetchAll = async (query, params = []) => {
     });
 
     return Object.values(hourly).sort((a, b) => a.hour - b.hour);
+  } else if (query.includes('FROM credit_customers')) {
+    // Credit customers query
+    return storage.credit_customers.filter(c => c.is_active === 1);
+  } else if (query.includes('FROM credit_transactions')) {
+    // Credit transactions query
+    const [customerId] = params;
+    return storage.credit_transactions
+      .filter(t => t.customer_id === customerId)
+      .map(t => {
+        const user = storage.users.find(u => u.id === t.created_by);
+        const order = t.order_id ? storage.orders.find(o => o.id === t.order_id) : null;
+        return {
+          ...t,
+          created_by_name: user?.full_name || 'Unknown',
+          order_number: order?.order_number || null,
+        };
+      });
   }
 
   return [];

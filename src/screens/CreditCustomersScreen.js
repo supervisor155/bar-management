@@ -118,6 +118,7 @@ export default function CreditCustomersScreen() {
         total_credit: 0,
         total_paid: 0,
         balance: 0,
+        is_active: 1,
       });
 
       showSnackbar('Customer added successfully');
