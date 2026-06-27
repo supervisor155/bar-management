@@ -19,6 +19,7 @@ import BackupScreen from '../screens/BackupScreen';
 import ReceiptScreen from '../screens/ReceiptScreen';
 import ChangePasswordScreen from '../screens/ChangePasswordScreen';
 import CreditCustomersScreen from '../screens/CreditCustomersScreen';
+import CreditOrdersScreen from '../screens/CreditOrdersScreen';
 import AIInsightsScreen from '../screens/AIInsightsScreen';
 
 const Stack = createNativeStackNavigator();
@@ -150,6 +151,15 @@ export default function AppNavigator() {
               component={CreditCustomersScreen}
               options={{
                 title: 'Credit Customers',
+                headerStyle: { backgroundColor: '#1976d2' },
+                headerTintColor: '#fff',
+              }}
+            />
+            <Stack.Screen
+              name="CreditOrders"
+              component={CreditOrdersScreen}
+              options={{
+                title: 'Credit Orders',
                 headerStyle: { backgroundColor: '#1976d2' },
                 headerTintColor: '#fff',
               }}

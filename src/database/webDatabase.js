@@ -160,6 +160,40 @@ export const fetchAll = async (query, params = []) => {
           order_number: order?.order_number || null,
         };
       });
+  } else if (query.includes('FROM orders') && query.includes('JOIN credit_customers')) {
+    // Credit orders query
+    return storage.orders
+      .filter(o => o.payment_method === 'credit')
+      .map(o => {
+        const customer = storage.credit_customers.find(c => c.id === o.customer_id);
+        const itemCount = storage.order_items.filter(oi => oi.order_id === o.id).length;
+        return {
+          ...o,
+          customer_name: customer?.customer_name || 'Unknown',
+          phone: customer?.phone || '',
+          item_count: itemCount,
+        };
+      })
+      .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+  } else if (query.includes('FROM order_items') && query.includes('JOIN products')) {
+    // Order items with product details
+    const [orderId] = params;
+    return storage.order_items
+      .filter(oi => oi.order_id === orderId)
+      .map(oi => {
+        const product = storage.products.find(p => p.id === oi.product_id);
+        return {
+          ...oi,
+          product_name: product?.name || 'Unknown',
+          unit: product?.unit || '',
+        };
+      });
+  } else if (query.includes('SUM(subtotal)') && query.includes('FROM order_items')) {
+    // Sum of order items
+    const [orderId] = params;
+    const items = storage.order_items.filter(oi => oi.order_id === orderId);
+    const total = items.reduce((sum, item) => sum + (item.subtotal || 0), 0);
+    return [{ total }];
   }
 
   return [];
@@ -191,6 +225,27 @@ export const fetchOne = async (query, params = []) => {
       total_revenue: totalRevenue,
       avg_order_value: avgOrderValue
     };
+  } else if (query.includes('FROM orders WHERE id')) {
+    // Get single order
+    const [orderId] = params;
+    const order = storage.orders.find(o => o.id === orderId);
+    if (order && query.includes('JOIN credit_customers')) {
+      const customer = storage.credit_customers.find(c => c.id === order.customer_id);
+      return {
+        ...order,
+        customer_name: customer?.customer_name || 'Unknown',
+        phone: customer?.phone || '',
+      };
+    }
+    return order || null;
+  } else if (query.includes('FROM credit_customers WHERE id')) {
+    // Get single customer
+    const [customerId] = params;
+    return storage.credit_customers.find(c => c.id === customerId) || null;
+  } else if (query.includes('FROM order_items WHERE order_id')) {
+    // Check existing order item
+    const [orderId, productId] = params;
+    return storage.order_items.find(oi => oi.order_id === orderId && oi.product_id === productId) || null;
   }
 
   return null;
@@ -235,9 +290,20 @@ export const executeQuery = async (query, params = []) => {
     const [quantity, productId] = params;
     const product = storage.products.find(p => p.id === productId);
     if (product) {
-      product.current_stock -= quantity;
+      if (query.includes('current_stock - ')) {
+        product.current_stock -= quantity;
+      } else if (query.includes('current_stock + ')) {
+        product.current_stock += quantity;
+      }
       saveToStorage();
     }
+  } else if (query.includes('DELETE FROM order_items')) {
+    // Handle DELETE queries
+    const [itemId] = params;
+    const initialLength = storage.order_items.length;
+    storage.order_items = storage.order_items.filter(oi => oi.id !== itemId);
+    saveToStorage();
+    return { changes: initialLength - storage.order_items.length };
   }
 
   return { changes: 1 };

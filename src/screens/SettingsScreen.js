@@ -78,6 +78,14 @@ export default function SettingsScreen() {
               onPress={() => navigation.navigate('CreditCustomers')}
             />
 
+            <List.Item
+              title="Credit Orders"
+              description="Orders on credit with payments"
+              left={(props) => <List.Icon {...props} icon="cart-arrow-right" />}
+              right={(props) => <List.Icon {...props} icon="chevron-right" />}
+              onPress={() => navigation.navigate('CreditOrders')}
+            />
+
             <Divider />
           </>
         )}
