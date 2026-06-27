@@ -33,6 +33,23 @@ export default function SettingsScreen() {
 
       {/* Settings Sections */}
       <List.Section>
+        {/* AI Insights - Available to Managers and Owners */}
+        {(user?.role === 'owner' || user?.role === 'manager') && (
+          <>
+            <List.Subheader>Artificial Intelligence</List.Subheader>
+
+            <List.Item
+              title="AI Insights & Predictions"
+              description="Smart recommendations and forecasts"
+              left={(props) => <List.Icon {...props} icon="robot" color="#1976d2" />}
+              right={(props) => <List.Icon {...props} icon="chevron-right" />}
+              onPress={() => navigation.navigate('AIInsights')}
+            />
+
+            <Divider />
+          </>
+        )}
+
         {user?.role === 'owner' && (
           <>
             <List.Subheader>Management</List.Subheader>

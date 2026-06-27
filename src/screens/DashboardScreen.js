@@ -5,10 +5,12 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useAuth } from '../context/AuthContext';
 import { fetchOne, fetchAll } from '../database';
 import { format } from 'date-fns';
-import { useFocusEffect } from '@react-navigation/native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
+import { aiEngine } from '../ai/aiEngine';
 
 export default function DashboardScreen() {
   const { user } = useAuth();
+  const navigation = useNavigation();
   const [refreshing, setRefreshing] = useState(false);
   const [stats, setStats] = useState({
     todayRevenue: 0,
@@ -18,6 +20,7 @@ export default function DashboardScreen() {
   });
   const [recentOrders, setRecentOrders] = useState([]);
   const [lowStockProducts, setLowStockProducts] = useState([]);
+  const [aiInsight, setAiInsight] = useState(null);
 
   useEffect(() => {
     loadDashboardData();
@@ -77,6 +80,18 @@ export default function DashboardScreen() {
 
       setLowStockProducts(lowStockResult);
       setRecentOrders(recentOrdersResult);
+
+      // Load AI insight (for managers and owners)
+      if (user?.role === 'owner' || user?.role === 'manager') {
+        try {
+          const insights = await aiEngine.getBusinessInsights();
+          if (insights.length > 0) {
+            setAiInsight(insights[0]); // Show the top priority insight
+          }
+        } catch (error) {
+          console.error('Error loading AI insight:', error);
+        }
+      }
     } catch (error) {
       console.error('Error loading dashboard data:', error);
     }
@@ -173,6 +188,28 @@ export default function DashboardScreen() {
           </Card.Content>
         </Card>
       </View>
+
+      {/* AI Insight Widget */}
+      {aiInsight && (user?.role === 'owner' || user?.role === 'manager') && (
+        <Card style={[styles.card, { borderLeftWidth: 4, borderLeftColor: aiInsight.color }]}>
+          <Card.Title
+            title="🤖 AI Insight"
+            subtitle="Smart recommendation for you"
+            left={(props) => <MaterialCommunityIcons name={aiInsight.icon} size={24} color={aiInsight.color} />}
+            right={(props) => (
+              <Button onPress={() => navigation.navigate('AIInsights')}>View All</Button>
+            )}
+          />
+          <Card.Content>
+            <Text variant="titleMedium" style={{ marginBottom: 8 }}>
+              {aiInsight.title}
+            </Text>
+            <Text variant="bodyMedium" style={{ color: '#666' }}>
+              {aiInsight.message}
+            </Text>
+          </Card.Content>
+        </Card>
+      )}
 
       {/* Low Stock Alert */}
       {lowStockProducts.length > 0 && (
