@@ -233,6 +233,76 @@ export default function DashboardScreen() {
         </Card>
       )}
 
+      {/* Quick Actions Shortcuts */}
+      <Card style={styles.card}>
+        <Card.Title
+          title="Quick Actions"
+          left={(props) => <MaterialCommunityIcons name="lightning-bolt" size={24} color="#ff9800" />}
+        />
+        <Card.Content>
+          <View style={styles.quickActionsGrid}>
+            <Button
+              mode="contained-tonal"
+              icon="cart-plus"
+              onPress={() => navigation.navigate('POS')}
+              style={styles.quickActionButton}
+              contentStyle={styles.quickActionContent}
+            >
+              New Order
+            </Button>
+            <Button
+              mode="contained-tonal"
+              icon="table-chair"
+              onPress={() => navigation.navigate('TableManagement')}
+              style={styles.quickActionButton}
+              contentStyle={styles.quickActionContent}
+            >
+              Tables
+            </Button>
+            <Button
+              mode="contained-tonal"
+              icon="chef-hat"
+              onPress={() => navigation.navigate('KitchenDisplay')}
+              style={styles.quickActionButton}
+              contentStyle={styles.quickActionContent}
+            >
+              Kitchen
+            </Button>
+            {(user?.role === 'owner' || user?.role === 'manager') && (
+              <>
+                <Button
+                  mode="contained-tonal"
+                  icon="chart-line"
+                  onPress={() => navigation.navigate('Analytics')}
+                  style={styles.quickActionButton}
+                  contentStyle={styles.quickActionContent}
+                >
+                  Analytics
+                </Button>
+                <Button
+                  mode="contained-tonal"
+                  icon="cash-register"
+                  onPress={() => navigation.navigate('CashDrawer')}
+                  style={styles.quickActionButton}
+                  contentStyle={styles.quickActionContent}
+                >
+                  Cash Drawer
+                </Button>
+                <Button
+                  mode="contained-tonal"
+                  icon="medal"
+                  onPress={() => navigation.navigate('LoyaltyProgram')}
+                  style={styles.quickActionButton}
+                  contentStyle={styles.quickActionContent}
+                >
+                  Loyalty
+                </Button>
+              </>
+            )}
+          </View>
+        </Card.Content>
+      </Card>
+
       {/* AI Insight Widget */}
       {aiInsight && (user?.role === 'owner' || user?.role === 'manager') && (
         <Card style={[styles.card, { borderLeftWidth: 4, borderLeftColor: aiInsight.color }]}>
@@ -393,5 +463,17 @@ const styles = StyleSheet.create({
   },
   orderStatusButton: {
     flex: 1,
+  },
+  quickActionsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  quickActionButton: {
+    flexBasis: '48%',
+    flexGrow: 0,
+  },
+  quickActionContent: {
+    paddingVertical: 8,
   },
 });

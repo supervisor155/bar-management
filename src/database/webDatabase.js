@@ -20,6 +20,8 @@ const storage = {
   loyalty_tiers: [],
   loyalty_rewards: [],
   loyalty_transactions: [],
+  cash_drawer_shifts: [],
+  cash_drawer_transactions: [],
 };
 
 export const initDatabase = async () => {
@@ -253,6 +255,20 @@ export const fetchAll = async (query, params = []) => {
     const [customerId] = params;
     return storage.loyalty_transactions
       .filter(t => t.customer_id === customerId)
+      .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+  } else if (query.includes('FROM cash_drawer_shifts')) {
+    if (query.includes("status = 'open'")) {
+      const [userId] = params;
+      return storage.cash_drawer_shifts.find(s => s.status === 'open' && s.opened_by === userId) || null;
+    }
+    const [userId] = params;
+    return storage.cash_drawer_shifts
+      .filter(s => s.opened_by === userId)
+      .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+  } else if (query.includes('FROM cash_drawer_transactions')) {
+    const [shiftId] = params;
+    return storage.cash_drawer_transactions
+      .filter(t => t.shift_id === shiftId)
       .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
   }
 

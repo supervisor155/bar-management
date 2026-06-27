@@ -86,6 +86,22 @@ export default function SettingsScreen() {
               right={(props) => <List.Icon {...props} icon="chevron-right" />}
               onPress={() => navigation.navigate('LoyaltyProgram')}
             />
+
+            <List.Item
+              title="Analytics & Charts"
+              description="Revenue trends, top products, insights"
+              left={(props) => <List.Icon {...props} icon="chart-line" color="#9c27b0" />}
+              right={(props) => <List.Icon {...props} icon="chevron-right" />}
+              onPress={() => navigation.navigate('Analytics')}
+            />
+
+            <List.Item
+              title="Cash Drawer Management"
+              description="Shift tracking, balance reconciliation"
+              left={(props) => <List.Icon {...props} icon="cash-register" color="#00bcd4" />}
+              right={(props) => <List.Icon {...props} icon="chevron-right" />}
+              onPress={() => navigation.navigate('CashDrawer')}
+            />
           </>
         )}
 

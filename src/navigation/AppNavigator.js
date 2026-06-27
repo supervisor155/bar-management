@@ -25,6 +25,8 @@ import TableManagementScreen from '../screens/TableManagementScreen';
 import KitchenDisplayScreen from '../screens/KitchenDisplayScreen';
 import InventoryManagementScreen from '../screens/InventoryManagementScreen';
 import LoyaltyProgramScreen from '../screens/LoyaltyProgramScreen';
+import AnalyticsScreen from '../screens/AnalyticsScreen';
+import CashDrawerScreen from '../screens/CashDrawerScreen';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -209,6 +211,24 @@ export default function AppNavigator() {
               component={LoyaltyProgramScreen}
               options={{
                 title: 'Loyalty Program',
+                headerStyle: { backgroundColor: '#1976d2' },
+                headerTintColor: '#fff',
+              }}
+            />
+            <Stack.Screen
+              name="Analytics"
+              component={AnalyticsScreen}
+              options={{
+                title: 'Analytics & Charts',
+                headerStyle: { backgroundColor: '#1976d2' },
+                headerTintColor: '#fff',
+              }}
+            />
+            <Stack.Screen
+              name="CashDrawer"
+              component={CashDrawerScreen}
+              options={{
+                title: 'Cash Drawer Management',
                 headerStyle: { backgroundColor: '#1976d2' },
                 headerTintColor: '#fff',
               }}
