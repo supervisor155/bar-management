@@ -18,6 +18,8 @@ export default function DashboardScreen() {
     todayOrders: 0,
     lowStockItems: 0,
     activeOrders: 0,
+    paidOrders: 0,
+    unpaidOrders: 0,
   });
   const [recentOrders, setRecentOrders] = useState([]);
   const [lowStockProducts, setLowStockProducts] = useState([]);
@@ -53,6 +55,17 @@ export default function DashboardScreen() {
         []
       );
 
+      // Get paid and unpaid orders count for today
+      const paidOrdersResult = await fetchOne(
+        `SELECT COUNT(*) as count FROM orders WHERE DATE(created_at) = ? AND payment_status = 'paid'`,
+        [today]
+      );
+
+      const unpaidOrdersResult = await fetchOne(
+        `SELECT COUNT(*) as count FROM orders WHERE DATE(created_at) = ? AND payment_status IN ('pending', 'partial')`,
+        [today]
+      );
+
       // Get low stock products
       const lowStockResult = await fetchAll(
         `SELECT name, current_stock, min_stock_level, unit
@@ -77,6 +90,8 @@ export default function DashboardScreen() {
         todayOrders: ensureNumber(revenueResult?.orders, 0),
         lowStockItems: lowStockResult.length || 0,
         activeOrders: ensureNumber(activeOrdersResult?.count, 0),
+        paidOrders: ensureNumber(paidOrdersResult?.count, 0),
+        unpaidOrders: ensureNumber(unpaidOrdersResult?.count, 0),
       });
 
       setLowStockProducts(lowStockResult);
@@ -185,6 +200,38 @@ export default function DashboardScreen() {
           </Card.Content>
         </Card>
       </View>
+
+      {/* Paid/Unpaid Orders Section - For Managers */}
+      {(user?.role === 'owner' || user?.role === 'manager') && (
+        <Card style={styles.ordersManagementCard}>
+          <Card.Title
+            title="Today's Order Status"
+            left={(props) => <MaterialCommunityIcons name="cash-check" size={24} color="#1976d2" />}
+          />
+          <Card.Content>
+            <View style={styles.orderStatusRow}>
+              <Button
+                mode="contained"
+                icon="check-circle"
+                style={[styles.orderStatusButton, { backgroundColor: '#4caf50' }]}
+                labelStyle={{ color: '#fff' }}
+                onPress={() => navigation.navigate('Orders', { filter: 'paid' })}
+              >
+                Paid: {stats.paidOrders}
+              </Button>
+              <Button
+                mode="contained"
+                icon="clock-alert"
+                style={[styles.orderStatusButton, { backgroundColor: '#ff9800' }]}
+                labelStyle={{ color: '#fff' }}
+                onPress={() => navigation.navigate('Orders', { filter: 'unpaid' })}
+              >
+                Unpaid: {stats.unpaidOrders}
+              </Button>
+            </View>
+          </Card.Content>
+        </Card>
+      )}
 
       {/* AI Insight Widget */}
       {aiInsight && (user?.role === 'owner' || user?.role === 'manager') && (
@@ -334,5 +381,17 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#666',
     marginTop: 12,
+  },
+  ordersManagementCard: {
+    margin: 12,
+    marginBottom: 10,
+  },
+  orderStatusRow: {
+    flexDirection: 'row',
+    gap: 12,
+    justifyContent: 'space-between',
+  },
+  orderStatusButton: {
+    flex: 1,
   },
 });

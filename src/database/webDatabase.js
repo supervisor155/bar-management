@@ -205,11 +205,30 @@ export const fetchOne = async (query, params = []) => {
   if (query.includes('FROM users WHERE username')) {
     const [username, password] = params;
     return storage.users.find(u => u.username === username && u.password === password);
-  } else if (query.includes('COUNT(*) as count FROM orders')) {
+  } else if (query.includes('COUNT(*) as count FROM orders WHERE status')) {
     const activeOrders = storage.orders.filter(o =>
       o.status === 'pending' || o.status === 'preparing'
     );
     return { count: activeOrders.length };
+  } else if (query.includes('COUNT(*) as count FROM orders WHERE DATE(created_at)')) {
+    // Paid/unpaid orders count for today
+    const [dateParam] = params;
+    const today = dateParam || new Date().toISOString().split('T')[0];
+
+    if (query.includes("payment_status = 'paid'")) {
+      const paidOrders = storage.orders.filter(o => {
+        const orderDate = o.created_at.split('T')[0];
+        return orderDate === today && o.payment_status === 'paid';
+      });
+      return { count: paidOrders.length };
+    } else if (query.includes("payment_status IN ('pending', 'partial')")) {
+      const unpaidOrders = storage.orders.filter(o => {
+        const orderDate = o.created_at.split('T')[0];
+        return orderDate === today && (o.payment_status === 'pending' || o.payment_status === 'partial');
+      });
+      return { count: unpaidOrders.length };
+    }
+    return { count: 0 };
   } else if (query.includes('SUM(total_amount)') || query.includes('COALESCE(SUM(total_amount)')) {
     // Sales summary - handle both dashboard and reports queries
     const [dateParam] = params;

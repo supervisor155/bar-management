@@ -4,14 +4,16 @@ import { Card, Text, Button, Chip, List, Searchbar, Portal, Modal, RadioButton, 
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { fetchAll, updateRecord } from '../database';
 import { format } from 'date-fns';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute, useFocusEffect } from '@react-navigation/native';
 
 export default function OrdersScreen() {
   const navigation = useNavigation();
+  const route = useRoute();
   const [orders, setOrders] = useState([]);
   const [filteredOrders, setFilteredOrders] = useState([]);
   const [refreshing, setRefreshing] = useState(false);
   const [filterStatus, setFilterStatus] = useState('all');
+  const [filterPayment, setFilterPayment] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [paymentModal, setPaymentModal] = useState({ visible: false, order: null });
   const [paymentMethod, setPaymentMethod] = useState('cash');
@@ -20,9 +22,27 @@ export default function OrdersScreen() {
     loadOrders();
   }, []);
 
+  // Auto-refresh when screen comes into focus
+  useFocusEffect(
+    React.useCallback(() => {
+      loadOrders();
+    }, [])
+  );
+
+  // Handle filter from route params
+  useEffect(() => {
+    if (route.params?.filter) {
+      if (route.params.filter === 'paid') {
+        setFilterPayment('paid');
+      } else if (route.params.filter === 'unpaid') {
+        setFilterPayment('unpaid');
+      }
+    }
+  }, [route.params]);
+
   useEffect(() => {
     filterOrders();
-  }, [filterStatus, searchQuery, orders]);
+  }, [filterStatus, filterPayment, searchQuery, orders]);
 
   const loadOrders = async () => {
     try {
@@ -44,10 +64,19 @@ export default function OrdersScreen() {
   const filterOrders = () => {
     let filtered = orders;
 
+    // Status filter
     if (filterStatus !== 'all') {
       filtered = filtered.filter((o) => o.status === filterStatus);
     }
 
+    // Payment filter
+    if (filterPayment === 'paid') {
+      filtered = filtered.filter((o) => o.payment_status === 'paid');
+    } else if (filterPayment === 'unpaid') {
+      filtered = filtered.filter((o) => o.payment_status === 'pending' || o.payment_status === 'partial');
+    }
+
+    // Search filter
     if (searchQuery) {
       filtered = filtered.filter(
         (o) =>
@@ -145,6 +174,7 @@ export default function OrdersScreen() {
         />
 
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.statusScroll}>
+          <Text variant="bodySmall" style={styles.filterLabel}>Status:</Text>
           <Chip selected={filterStatus === 'all'} onPress={() => setFilterStatus('all')} style={styles.statusChip}>
             All
           </Chip>
@@ -179,6 +209,29 @@ export default function OrdersScreen() {
             textStyle={{ color: getStatusColor('served') }}
           >
             Served
+          </Chip>
+        </ScrollView>
+
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.statusScroll}>
+          <Text variant="bodySmall" style={styles.filterLabel}>Payment:</Text>
+          <Chip selected={filterPayment === 'all'} onPress={() => setFilterPayment('all')} style={styles.statusChip}>
+            All
+          </Chip>
+          <Chip
+            selected={filterPayment === 'paid'}
+            onPress={() => setFilterPayment('paid')}
+            style={styles.statusChip}
+            textStyle={{ color: '#4caf50' }}
+          >
+            Paid
+          </Chip>
+          <Chip
+            selected={filterPayment === 'unpaid'}
+            onPress={() => setFilterPayment('unpaid')}
+            style={styles.statusChip}
+            textStyle={{ color: '#ff9800' }}
+          >
+            Unpaid
           </Chip>
         </ScrollView>
       </View>
@@ -366,6 +419,13 @@ const styles = StyleSheet.create({
   },
   statusScroll: {
     flexDirection: 'row',
+    marginTop: 8,
+  },
+  filterLabel: {
+    alignSelf: 'center',
+    marginRight: 8,
+    fontWeight: 'bold',
+    color: '#666',
   },
   statusChip: {
     marginRight: 8,
