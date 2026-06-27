@@ -1,6 +1,17 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Platform } from 'react-native';
 import { fetchOne } from '../database';
+
+// Import notification service for native platforms
+let notificationService;
+if (Platform.OS !== 'web') {
+  try {
+    notificationService = require('../services/notificationService').notificationService;
+  } catch (e) {
+    console.warn('Notification service not available:', e);
+  }
+}
 
 const AuthContext = createContext();
 
@@ -62,6 +73,16 @@ export const AuthProvider = ({ children }) => {
       await AsyncStorage.setItem('user', JSON.stringify(userData));
       setUser(userData);
 
+      // Initialize notification service with user context (native platforms only)
+      if (Platform.OS !== 'web' && notificationService) {
+        try {
+          await notificationService.initialize(userData.id, userData.role);
+          console.log('✅ Notifications initialized for user');
+        } catch (error) {
+          console.error('⚠️ Error initializing notifications:', error);
+        }
+      }
+
       return userData;
     } catch (error) {
       console.error('Login error:', error);
@@ -71,6 +92,11 @@ export const AuthProvider = ({ children }) => {
 
   const logout = async () => {
     try {
+      // Clean up notification service (native platforms only)
+      if (Platform.OS !== 'web' && notificationService) {
+        notificationService.cleanup();
+      }
+
       await AsyncStorage.removeItem('user');
       setUser(null);
     } catch (error) {

@@ -1,0 +1,30 @@
+# Add these lines to your .gitignore file
+
+# Supabase credentials (NEVER COMMIT!)
+src/config/supabase.js
+
+# Expo notifications
+google-services.json
+GoogleService-Info.plist
+
+# Environment variables
+.env
+.env.local
+.env.production
+
+# Supabase local development
+.supabase/
+
+# SQLite databases
+*.db
+*.db-shm
+*.db-wal
+
+# Sensitive logs
+logs/
+*.log
+
+# Backup files with data
+backups/
+*.backup
+*.sql.gz
