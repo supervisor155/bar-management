@@ -1,24 +1,37 @@
-# Bar Management System 🍺📊
+# Bar Management System 🍺📊🤖
 
-A comprehensive mobile POS and inventory management system for bars and restaurants, built with React Native and Expo.
+A comprehensive **AI-powered** mobile POS and inventory management system for bars and restaurants, built with React Native and Expo.
 
-**Version:** 1.0.0 (Production Ready)  
-**Status:** ✅ Complete - Ready for deployment
+**Version:** 1.2.0 (AI-Powered!)  
+**Status:** ✅ Complete - Ready for deployment  
+**NEW:** 🤖 Built-in AI for predictions & recommendations (100% offline!)
 
 ---
 
 ## 🎯 Overview
 
 This is a complete, production-ready bar and restaurant management system with:
-- **Offline-first** mobile architecture
+- **🤖 AI-powered** predictions and recommendations (NEW!)
+- **Offline-first** mobile architecture (AI works offline too!)
 - **Cross-platform** support (iOS, Android, Web)
 - **Role-based access** control
 - **Real-time** inventory tracking
-- **Complete business analytics**
+- **Complete business analytics** + AI insights
 
 ---
 
 ## ✨ Features
+
+### 🤖 **NEW! AI-Powered Intelligence** ⭐
+- **Demand Prediction** - Know exactly how much to order
+- **Stock Recommendations** - Never run out or overstock
+- **Performance Analysis** - Identify best & worst products
+- **Trend Analysis** - Understand business patterns
+- **Business Insights** - Smart recommendations for growth
+- **100% Offline** - All AI runs locally, no internet needed!
+- **Confidence Scores** - Know how reliable each prediction is
+- Access via: `Settings → AI Insights & Predictions`
+- See [AI_FEATURES.md](./AI_FEATURES.md) for complete guide
 
 ### 🔐 Authentication & User Management
 - Secure login with role-based access control
