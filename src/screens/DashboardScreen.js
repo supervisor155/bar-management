@@ -7,6 +7,7 @@ import { fetchOne, fetchAll } from '../database';
 import { format } from 'date-fns';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { aiEngine } from '../ai/aiEngine';
+import { formatCurrency, ensureNumber } from '../utils/formatters';
 
 export default function DashboardScreen() {
   const { user } = useAuth();
@@ -72,10 +73,10 @@ export default function DashboardScreen() {
       );
 
       setStats({
-        todayRevenue: revenueResult?.revenue || 0,
-        todayOrders: revenueResult?.orders || 0,
-        lowStockItems: lowStockResult.length,
-        activeOrders: activeOrdersResult?.count || 0,
+        todayRevenue: ensureNumber(revenueResult?.revenue, 0),
+        todayOrders: ensureNumber(revenueResult?.orders, 0),
+        lowStockItems: lowStockResult.length || 0,
+        activeOrders: ensureNumber(activeOrdersResult?.count, 0),
       });
 
       setLowStockProducts(lowStockResult);
@@ -101,10 +102,6 @@ export default function DashboardScreen() {
     setRefreshing(true);
     await loadDashboardData();
     setRefreshing(false);
-  };
-
-  const formatCurrency = (amount) => {
-    return `${amount.toLocaleString()} RWF`;
   };
 
   const getStatusColor = (status) => {

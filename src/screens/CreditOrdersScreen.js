@@ -21,6 +21,7 @@ import { useAuth } from '../context/AuthContext';
 import { fetchAll, fetchOne, insertRecord, updateRecord, executeQuery } from '../database';
 import { format } from 'date-fns';
 import { useFocusEffect } from '@react-navigation/native';
+import { formatCurrency as formatCurrencyUtil, ensureNumber } from '../utils/formatters';
 
 export default function CreditOrdersScreen() {
   const { user } = useAuth();
@@ -423,7 +424,7 @@ export default function CreditOrdersScreen() {
   };
 
   const formatCurrency = (amount) => {
-    return `${amount.toLocaleString()} RWF`;
+    return formatCurrencyUtil(ensureNumber(amount, 0));
   };
 
   const getStatusColor = (status) => {
@@ -468,7 +469,7 @@ export default function CreditOrdersScreen() {
             Credit Orders
           </Text>
           <Text variant="bodyMedium" style={styles.subtitle}>
-            {creditOrders.length} orders • Total pending: {formatCurrency(creditOrders.reduce((sum, o) => sum + (o.total_amount - (o.amount_paid || 0)), 0))}
+            {creditOrders.length} orders • Total pending: {formatCurrency(creditOrders.reduce((sum, o) => sum + (ensureNumber(o.total_amount, 0) - ensureNumber(o.amount_paid, 0)), 0))}
           </Text>
         </View>
 

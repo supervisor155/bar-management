@@ -210,16 +210,27 @@ export const fetchOne = async (query, params = []) => {
       o.status === 'pending' || o.status === 'preparing'
     );
     return { count: activeOrders.length };
-  } else if (query.includes('SUM(total_amount)')) {
-    // Sales summary
-    const today = new Date().toISOString().split('T')[0];
-    const todayOrders = storage.orders.filter(o =>
-      o.created_at.startsWith(today) && o.payment_status === 'paid'
-    );
+  } else if (query.includes('SUM(total_amount)') || query.includes('COALESCE(SUM(total_amount)')) {
+    // Sales summary - handle both dashboard and reports queries
+    const [dateParam] = params;
+    const today = dateParam || new Date().toISOString().split('T')[0];
+    const todayOrders = storage.orders.filter(o => {
+      const orderDate = o.created_at.split('T')[0];
+      return orderDate === today && o.payment_status === 'paid';
+    });
 
-    const totalRevenue = todayOrders.reduce((sum, o) => sum + o.total_amount, 0);
+    const totalRevenue = todayOrders.reduce((sum, o) => sum + (o.total_amount || 0), 0);
     const avgOrderValue = todayOrders.length > 0 ? totalRevenue / todayOrders.length : 0;
 
+    // Return format expected by dashboard
+    if (query.includes('COALESCE(SUM(total_amount), 0) as revenue')) {
+      return {
+        revenue: totalRevenue,
+        orders: todayOrders.length,
+      };
+    }
+
+    // Return format expected by reports
     return {
       total_orders: todayOrders.length,
       total_revenue: totalRevenue,

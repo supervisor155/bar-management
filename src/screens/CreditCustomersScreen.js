@@ -5,6 +5,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useAuth } from '../context/AuthContext';
 import { fetchAll, fetchOne, insertRecord, updateRecord, executeQuery } from '../database';
 import { format } from 'date-fns';
+import { formatCurrency as formatCurrencyUtil, ensureNumber } from '../utils/formatters';
 
 export default function CreditCustomersScreen() {
   const { user } = useAuth();
@@ -182,7 +183,7 @@ export default function CreditCustomersScreen() {
   };
 
   const formatCurrency = (amount) => {
-    return `${amount.toLocaleString()} RWF`;
+    return formatCurrencyUtil(ensureNumber(amount, 0));
   };
 
   const getBalanceColor = (balance) => {
@@ -199,7 +200,7 @@ export default function CreditCustomersScreen() {
             Credit Customers
           </Text>
           <Text variant="bodyMedium" style={styles.subtitle}>
-            {customers.length} customers • Total debt: {formatCurrency(customers.reduce((sum, c) => sum + c.balance, 0))}
+            {customers.length} customers • Total debt: {formatCurrency(customers.reduce((sum, c) => sum + ensureNumber(c.balance, 0), 0))}
           </Text>
         </View>
 
