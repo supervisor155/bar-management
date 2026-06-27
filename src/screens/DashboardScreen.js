@@ -5,6 +5,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useAuth } from '../context/AuthContext';
 import { fetchOne, fetchAll } from '../database';
 import { format } from 'date-fns';
+import { useFocusEffect } from '@react-navigation/native';
 
 export default function DashboardScreen() {
   const { user } = useAuth();
@@ -21,6 +22,13 @@ export default function DashboardScreen() {
   useEffect(() => {
     loadDashboardData();
   }, []);
+
+  // Auto-refresh when screen comes into focus
+  useFocusEffect(
+    React.useCallback(() => {
+      loadDashboardData();
+    }, [])
+  );
 
   const loadDashboardData = async () => {
     try {

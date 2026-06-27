@@ -18,6 +18,7 @@ import ProductsScreen from '../screens/ProductsScreen';
 import BackupScreen from '../screens/BackupScreen';
 import ReceiptScreen from '../screens/ReceiptScreen';
 import ChangePasswordScreen from '../screens/ChangePasswordScreen';
+import CreditCustomersScreen from '../screens/CreditCustomersScreen';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -139,6 +140,15 @@ export default function AppNavigator() {
               component={ChangePasswordScreen}
               options={{
                 title: 'Change Password',
+                headerStyle: { backgroundColor: '#1976d2' },
+                headerTintColor: '#fff',
+              }}
+            />
+            <Stack.Screen
+              name="CreditCustomers"
+              component={CreditCustomersScreen}
+              options={{
+                title: 'Credit Customers',
                 headerStyle: { backgroundColor: '#1976d2' },
                 headerTintColor: '#fff',
               }}

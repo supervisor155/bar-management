@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, ScrollView, FlatList, TouchableOpacity } from 'react-native';
-import { Card, Text, Button, TextInput, Chip, FAB, Portal, Modal, Snackbar, Divider } from 'react-native-paper';
+import { Card, Text, Button, TextInput, Chip, FAB, Portal, Modal, Snackbar, Divider, RadioButton, Menu } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useAuth } from '../context/AuthContext';
-import { fetchAll, insertRecord, updateRecord, executeQuery } from '../database';
+import { fetchAll, fetchOne, insertRecord, updateRecord, executeQuery } from '../database';
 import { format } from 'date-fns';
 
 export default function POSScreen() {
@@ -17,6 +17,10 @@ export default function POSScreen() {
   const [searchQuery, setSearchQuery] = useState('');
   const [modalVisible, setModalVisible] = useState(false);
   const [snackbar, setSnackbar] = useState({ visible: false, message: '' });
+  const [orderType, setOrderType] = useState('regular'); // 'regular' or 'credit'
+  const [creditCustomers, setCreditCustomers] = useState([]);
+  const [selectedCustomer, setSelectedCustomer] = useState(null);
+  const [customerMenuVisible, setCustomerMenuVisible] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -38,9 +42,15 @@ export default function POSScreen() {
         []
       );
 
+      const customersData = await fetchAll(
+        'SELECT * FROM credit_customers WHERE is_active = 1 ORDER BY customer_name',
+        []
+      );
+
       setCategories(categoriesData);
       setProducts(productsData);
       setFilteredProducts(productsData);
+      setCreditCustomers(customersData);
     } catch (error) {
       console.error('Error loading data:', error);
     }
@@ -91,6 +101,8 @@ export default function POSScreen() {
   const clearCart = () => {
     setCart([]);
     setTableNumber('');
+    setOrderType('regular');
+    setSelectedCustomer(null);
   };
 
   const getCartTotal = () => {
@@ -103,6 +115,11 @@ export default function POSScreen() {
       return;
     }
 
+    if (orderType === 'credit' && !selectedCustomer) {
+      showSnackbar('Please select a customer for credit order');
+      return;
+    }
+
     try {
       // Generate order number
       const orderNumber = `ORD${Date.now()}`;
@@ -112,9 +129,11 @@ export default function POSScreen() {
       const orderId = await insertRecord('orders', {
         order_number: orderNumber,
         table_number: tableNumber || null,
+        customer_id: orderType === 'credit' ? selectedCustomer.id : null,
         status: 'pending',
         total_amount: totalAmount,
-        payment_status: 'unpaid',
+        payment_status: orderType === 'credit' ? 'unpaid' : 'unpaid',
+        payment_method: orderType === 'credit' ? 'credit' : null,
         created_by: user.id,
       });
 
@@ -147,7 +166,38 @@ export default function POSScreen() {
         }
       }
 
-      showSnackbar(`Order ${orderNumber} placed successfully!`);
+      // If credit order, update customer balance
+      if (orderType === 'credit') {
+        const newTotalCredit = selectedCustomer.total_credit + totalAmount;
+        const newBalance = selectedCustomer.balance + totalAmount;
+
+        await updateRecord(
+          'credit_customers',
+          {
+            total_credit: newTotalCredit,
+            balance: newBalance,
+            updated_at: new Date().toISOString(),
+          },
+          'id = ?',
+          [selectedCustomer.id]
+        );
+
+        // Record credit transaction
+        await insertRecord('credit_transactions', {
+          customer_id: selectedCustomer.id,
+          order_id: orderId,
+          transaction_type: 'credit',
+          amount: totalAmount,
+          balance_after: newBalance,
+          notes: `Order #${orderNumber}`,
+          created_by: user.id,
+        });
+
+        showSnackbar(`Credit order placed for ${selectedCustomer.customer_name}!`);
+      } else {
+        showSnackbar(`Order ${orderNumber} placed successfully!`);
+      }
+
       clearCart();
       setModalVisible(false);
     } catch (error) {
@@ -258,6 +308,57 @@ export default function POSScreen() {
             style={styles.tableInput}
             keyboardType="number-pad"
           />
+
+          <View style={styles.orderTypeContainer}>
+            <Text variant="titleSmall" style={styles.orderTypeLabel}>
+              Order Type
+            </Text>
+            <RadioButton.Group onValueChange={setOrderType} value={orderType}>
+              <View style={styles.radioRow}>
+                <RadioButton.Item label="Regular Order" value="regular" />
+                <RadioButton.Item label="Credit Order (Pay Later)" value="credit" />
+              </View>
+            </RadioButton.Group>
+          </View>
+
+          {orderType === 'credit' && (
+            <View style={styles.customerSelectContainer}>
+              <Text variant="titleSmall" style={styles.orderTypeLabel}>
+                Select Customer *
+              </Text>
+              <Menu
+                visible={customerMenuVisible}
+                onDismiss={() => setCustomerMenuVisible(false)}
+                anchor={
+                  <Button
+                    mode="outlined"
+                    onPress={() => setCustomerMenuVisible(true)}
+                    style={styles.customerButton}
+                    icon="account"
+                  >
+                    {selectedCustomer ? selectedCustomer.customer_name : 'Select Customer'}
+                  </Button>
+                }
+              >
+                {creditCustomers.map((customer) => (
+                  <Menu.Item
+                    key={customer.id}
+                    onPress={() => {
+                      setSelectedCustomer(customer);
+                      setCustomerMenuVisible(false);
+                    }}
+                    title={customer.customer_name}
+                    leadingIcon="account"
+                  />
+                ))}
+              </Menu>
+              {selectedCustomer && (
+                <Text variant="bodySmall" style={styles.customerBalance}>
+                  Current Balance: {formatCurrency(selectedCustomer.balance)}
+                </Text>
+              )}
+            </View>
+          )}
 
           <ScrollView style={styles.cartList}>
             {cart.map((item) => (
@@ -383,6 +484,29 @@ const styles = StyleSheet.create({
   },
   tableInput: {
     margin: 16,
+    marginBottom: 8,
+  },
+  orderTypeContainer: {
+    padding: 16,
+    paddingTop: 0,
+  },
+  orderTypeLabel: {
+    marginBottom: 8,
+    fontWeight: 'bold',
+  },
+  radioRow: {
+    flexDirection: 'column',
+  },
+  customerSelectContainer: {
+    padding: 16,
+    paddingTop: 0,
+  },
+  customerButton: {
+    marginBottom: 8,
+  },
+  customerBalance: {
+    color: '#666',
+    marginTop: 4,
   },
   cartList: {
     maxHeight: 300,

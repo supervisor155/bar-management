@@ -37,15 +37,17 @@ export const AuthProvider = ({ children }) => {
     try {
       // Query user from database
       const dbUser = await fetchOne(
-        'SELECT id, username, full_name, role, is_active FROM users WHERE username = ? AND password = ?',
+        'SELECT id, username, full_name, role, is_active FROM users WHERE username = ? AND password = ? COLLATE NOCASE',
         [username, password]
       );
+
+      console.log('Login attempt:', { username, found: !!dbUser, dbUser });
 
       if (!dbUser) {
         throw new Error('Invalid username or password');
       }
 
-      if (dbUser.is_active === 0) {
+      if (dbUser.is_active === 0 || dbUser.is_active === false) {
         throw new Error('Account is deactivated');
       }
 

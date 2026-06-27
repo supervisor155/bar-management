@@ -67,6 +67,7 @@ export const createTables = (db) => {
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       order_number TEXT UNIQUE NOT NULL,
       table_number TEXT,
+      customer_id INTEGER,
       status TEXT NOT NULL DEFAULT 'pending' CHECK(status IN ('pending', 'preparing', 'ready', 'served', 'cancelled')),
       total_amount REAL DEFAULT 0,
       payment_status TEXT DEFAULT 'unpaid' CHECK(payment_status IN ('unpaid', 'paid', 'partial')),
@@ -76,7 +77,8 @@ export const createTables = (db) => {
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       completed_at DATETIME,
-      FOREIGN KEY (created_by) REFERENCES users(id)
+      FOREIGN KEY (created_by) REFERENCES users(id),
+      FOREIGN KEY (customer_id) REFERENCES credit_customers(id)
     );
   `);
 
@@ -127,6 +129,41 @@ export const createTables = (db) => {
     );
   `);
 
+  // Credit customers table - track customers with credit/debt
+  db.execSync(`
+    CREATE TABLE IF NOT EXISTS credit_customers (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      customer_name TEXT NOT NULL,
+      phone TEXT,
+      id_number TEXT,
+      total_credit REAL DEFAULT 0,
+      total_paid REAL DEFAULT 0,
+      balance REAL DEFAULT 0,
+      is_active INTEGER DEFAULT 1,
+      notes TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+  `);
+
+  // Credit transactions table - track individual credit transactions
+  db.execSync(`
+    CREATE TABLE IF NOT EXISTS credit_transactions (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      customer_id INTEGER NOT NULL,
+      order_id INTEGER,
+      transaction_type TEXT NOT NULL CHECK(transaction_type IN ('credit', 'payment')),
+      amount REAL NOT NULL,
+      balance_after REAL NOT NULL,
+      notes TEXT,
+      created_by INTEGER NOT NULL,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (customer_id) REFERENCES credit_customers(id),
+      FOREIGN KEY (order_id) REFERENCES orders(id),
+      FOREIGN KEY (created_by) REFERENCES users(id)
+    );
+  `);
+
   // Create indexes for better performance
   db.execSync('CREATE INDEX IF NOT EXISTS idx_products_category ON products(category_id);');
   db.execSync('CREATE INDEX IF NOT EXISTS idx_orders_created_at ON orders(created_at);');
@@ -134,6 +171,8 @@ export const createTables = (db) => {
   db.execSync('CREATE INDEX IF NOT EXISTS idx_order_items_order ON order_items(order_id);');
   db.execSync('CREATE INDEX IF NOT EXISTS idx_stock_movements_product ON stock_movements(product_id);');
   db.execSync('CREATE INDEX IF NOT EXISTS idx_stock_movements_created_at ON stock_movements(created_at);');
+  db.execSync('CREATE INDEX IF NOT EXISTS idx_credit_customers_active ON credit_customers(is_active);');
+  db.execSync('CREATE INDEX IF NOT EXISTS idx_credit_transactions_customer ON credit_transactions(customer_id);');
 };
 
 // Seed data - initial setup
