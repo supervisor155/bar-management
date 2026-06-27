@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, ScrollView, RefreshControl } from 'react-native';
-import { Card, Text, Button, Chip, List, Searchbar, Portal, Modal, RadioButton, Divider } from 'react-native-paper';
+import { Card, Text, Button, Chip, List, Searchbar, Portal, Modal, RadioButton, Divider, Snackbar } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { fetchAll, updateRecord } from '../database';
 import { format } from 'date-fns';
 import { useNavigation, useRoute, useFocusEffect } from '@react-navigation/native';
+import { generateReceiptHTML, printReceipt, getBusinessInfo } from '../utils/receiptGenerator';
 
 export default function OrdersScreen() {
   const navigation = useNavigation();
@@ -17,6 +18,7 @@ export default function OrdersScreen() {
   const [searchQuery, setSearchQuery] = useState('');
   const [paymentModal, setPaymentModal] = useState({ visible: false, order: null });
   const [paymentMethod, setPaymentMethod] = useState('cash');
+  const [snackbar, setSnackbar] = useState({ visible: false, message: '' });
 
   useEffect(() => {
     loadOrders();
@@ -122,8 +124,40 @@ export default function OrdersScreen() {
 
       closePaymentModal();
       await loadOrders();
+
+      // Print receipt automatically
+      await handlePrintReceipt(paymentModal.order.id);
     } catch (error) {
       console.error('Error processing payment:', error);
+    }
+  };
+
+  const handlePrintReceipt = async (orderId) => {
+    try {
+      // Load order details
+      const order = orders.find(o => o.id === orderId);
+      if (!order) return;
+
+      // Load order items
+      const orderItems = await fetchAll(
+        `SELECT oi.*, p.name as product_name, p.unit
+         FROM order_items oi
+         JOIN products p ON oi.product_id = p.id
+         WHERE oi.order_id = ?`,
+        [orderId]
+      );
+
+      // Get business info
+      const businessInfo = getBusinessInfo();
+
+      // Generate and print receipt
+      const receiptHTML = generateReceiptHTML(order, orderItems, businessInfo);
+      printReceipt(receiptHTML);
+
+      setSnackbar({ visible: true, message: 'Receipt sent to printer' });
+    } catch (error) {
+      console.error('Error printing receipt:', error);
+      setSnackbar({ visible: true, message: 'Failed to print receipt' });
     }
   };
 
@@ -322,6 +356,15 @@ export default function OrdersScreen() {
                   <Card.Actions>
                     <Button
                       mode="outlined"
+                      icon="printer"
+                      onPress={() => handlePrintReceipt(order.id)}
+                    >
+                      Print Receipt
+                    </Button>
+                  </Card.Content>
+                  <Card.Actions>
+                    <Button
+                      mode="outlined"
                       onPress={() => navigation.navigate('Receipt', { orderId: order.id })}
                       icon="receipt"
                     >
@@ -399,6 +442,10 @@ export default function OrdersScreen() {
           )}
         </Modal>
       </Portal>
+
+      <Snackbar visible={snackbar.visible} onDismiss={() => setSnackbar({ ...snackbar, visible: false })} duration={3000}>
+        {snackbar.message}
+      </Snackbar>
     </View>
   );
 }

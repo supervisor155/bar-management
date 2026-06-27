@@ -21,6 +21,10 @@ import ChangePasswordScreen from '../screens/ChangePasswordScreen';
 import CreditCustomersScreen from '../screens/CreditCustomersScreen';
 import CreditOrdersScreen from '../screens/CreditOrdersScreen';
 import AIInsightsScreen from '../screens/AIInsightsScreen';
+import TableManagementScreen from '../screens/TableManagementScreen';
+import KitchenDisplayScreen from '../screens/KitchenDisplayScreen';
+import InventoryManagementScreen from '../screens/InventoryManagementScreen';
+import LoyaltyProgramScreen from '../screens/LoyaltyProgramScreen';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -169,6 +173,42 @@ export default function AppNavigator() {
               component={AIInsightsScreen}
               options={{
                 title: 'AI Insights',
+                headerStyle: { backgroundColor: '#1976d2' },
+                headerTintColor: '#fff',
+              }}
+            />
+            <Stack.Screen
+              name="TableManagement"
+              component={TableManagementScreen}
+              options={{
+                title: 'Table Management',
+                headerStyle: { backgroundColor: '#1976d2' },
+                headerTintColor: '#fff',
+              }}
+            />
+            <Stack.Screen
+              name="KitchenDisplay"
+              component={KitchenDisplayScreen}
+              options={{
+                title: 'Kitchen Display System',
+                headerStyle: { backgroundColor: '#1976d2' },
+                headerTintColor: '#fff',
+              }}
+            />
+            <Stack.Screen
+              name="InventoryManagement"
+              component={InventoryManagementScreen}
+              options={{
+                title: 'Inventory Management',
+                headerStyle: { backgroundColor: '#1976d2' },
+                headerTintColor: '#fff',
+              }}
+            />
+            <Stack.Screen
+              name="LoyaltyProgram"
+              component={LoyaltyProgramScreen}
+              options={{
+                title: 'Loyalty Program',
                 headerStyle: { backgroundColor: '#1976d2' },
                 headerTintColor: '#fff',
               }}

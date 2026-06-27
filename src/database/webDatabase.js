@@ -13,6 +13,13 @@ const storage = {
   stock_movements: [],
   credit_customers: [],
   credit_transactions: [],
+  tables: [],
+  suppliers: [],
+  purchase_orders: [],
+  purchase_order_items: [],
+  loyalty_tiers: [],
+  loyalty_rewards: [],
+  loyalty_transactions: [],
 };
 
 export const initDatabase = async () => {
@@ -81,6 +88,34 @@ const seedData = () => {
   storage.orders = [];
   storage.order_items = [];
   storage.stock_movements = [];
+
+  // Tables
+  storage.tables = [
+    { id: 1, table_number: 'T1', capacity: 2, status: 'available', location: 'Main Floor', current_order_id: null, is_active: 1, created_at: new Date().toISOString() },
+    { id: 2, table_number: 'T2', capacity: 4, status: 'available', location: 'Main Floor', current_order_id: null, is_active: 1, created_at: new Date().toISOString() },
+    { id: 3, table_number: 'T3', capacity: 4, status: 'available', location: 'Main Floor', current_order_id: null, is_active: 1, created_at: new Date().toISOString() },
+    { id: 4, table_number: 'T4', capacity: 6, status: 'available', location: 'Main Floor', current_order_id: null, is_active: 1, created_at: new Date().toISOString() },
+    { id: 5, table_number: 'T5', capacity: 2, status: 'available', location: 'Terrace', current_order_id: null, is_active: 1, created_at: new Date().toISOString() },
+    { id: 6, table_number: 'T6', capacity: 4, status: 'available', location: 'Terrace', current_order_id: null, is_active: 1, created_at: new Date().toISOString() },
+    { id: 7, table_number: 'T7', capacity: 8, status: 'available', location: 'VIP', current_order_id: null, is_active: 1, created_at: new Date().toISOString() },
+    { id: 8, table_number: 'T8', capacity: 10, status: 'available', location: 'VIP', current_order_id: null, is_active: 1, created_at: new Date().toISOString() },
+  ];
+
+  // Loyalty tiers
+  storage.loyalty_tiers = [
+    { id: 1, tier_name: 'Bronze', min_points: 0, discount_percentage: 0, color: '#cd7f32', benefits: 'Earn 1 point per 1000 RWF', created_at: new Date().toISOString() },
+    { id: 2, tier_name: 'Silver', min_points: 100, discount_percentage: 5, color: '#c0c0c0', benefits: 'Earn 1 point per 1000 RWF + 5% discount', created_at: new Date().toISOString() },
+    { id: 3, tier_name: 'Gold', min_points: 500, discount_percentage: 10, color: '#ffd700', benefits: 'Earn 1 point per 1000 RWF + 10% discount + Birthday gift', created_at: new Date().toISOString() },
+    { id: 4, tier_name: 'Platinum', min_points: 1000, discount_percentage: 15, color: '#e5e4e2', benefits: 'Earn 1 point per 1000 RWF + 15% discount + Priority service', created_at: new Date().toISOString() },
+  ];
+
+  // Loyalty rewards
+  storage.loyalty_rewards = [
+    { id: 1, reward_name: 'Free Beer', points_required: 50, reward_type: 'free_item', reward_value: 0, product_id: 1, is_active: 1, created_at: new Date().toISOString() },
+    { id: 2, reward_name: '10% Discount Voucher', points_required: 100, reward_type: 'discount', reward_value: 10, product_id: null, is_active: 1, created_at: new Date().toISOString() },
+    { id: 3, reward_name: 'Free Grilled Chicken', points_required: 200, reward_type: 'free_item', reward_value: 0, product_id: 8, is_active: 1, created_at: new Date().toISOString() },
+    { id: 4, reward_name: '20% Discount Voucher', points_required: 300, reward_type: 'discount', reward_value: 20, product_id: null, is_active: 1, created_at: new Date().toISOString() },
+  ];
 };
 
 // Helper functions
@@ -194,6 +229,31 @@ export const fetchAll = async (query, params = []) => {
     const items = storage.order_items.filter(oi => oi.order_id === orderId);
     const total = items.reduce((sum, item) => sum + (item.subtotal || 0), 0);
     return [{ total }];
+  } else if (query.includes('FROM tables')) {
+    // Tables query
+    if (query.includes('WHERE is_active')) {
+      return storage.tables.filter(t => t.is_active === 1);
+    }
+    return storage.tables;
+  } else if (query.includes('FROM suppliers')) {
+    return storage.suppliers.filter(s => s.is_active === 1);
+  } else if (query.includes('FROM purchase_orders')) {
+    return storage.purchase_orders.map(po => {
+      const supplier = storage.suppliers.find(s => s.id === po.supplier_id);
+      return { ...po, supplier_name: supplier?.supplier_name || 'Unknown' };
+    }).sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+  } else if (query.includes('FROM loyalty_tiers')) {
+    return storage.loyalty_tiers.sort((a, b) => a.min_points - b.min_points);
+  } else if (query.includes('FROM loyalty_rewards')) {
+    return storage.loyalty_rewards.filter(r => r.is_active === 1).map(r => {
+      const product = r.product_id ? storage.products.find(p => p.id === r.product_id) : null;
+      return { ...r, product_name: product?.name || null };
+    });
+  } else if (query.includes('FROM loyalty_transactions')) {
+    const [customerId] = params;
+    return storage.loyalty_transactions
+      .filter(t => t.customer_id === customerId)
+      .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
   }
 
   return [];
@@ -276,6 +336,15 @@ export const fetchOne = async (query, params = []) => {
     // Check existing order item
     const [orderId, productId] = params;
     return storage.order_items.find(oi => oi.order_id === orderId && oi.product_id === productId) || null;
+  } else if (query.includes('FROM tables WHERE id')) {
+    const [tableId] = params;
+    return storage.tables.find(t => t.id === tableId) || null;
+  } else if (query.includes('FROM suppliers WHERE id')) {
+    const [supplierId] = params;
+    return storage.suppliers.find(s => s.id === supplierId) || null;
+  } else if (query.includes('FROM purchase_orders WHERE id')) {
+    const [poId] = params;
+    return storage.purchase_orders.find(po => po.id === poId) || null;
   }
 
   return null;

@@ -50,6 +50,47 @@ export default function SettingsScreen() {
           </>
         )}
 
+        {/* NEW FEATURES - Top Priority */}
+        <List.Subheader>Operations</List.Subheader>
+
+        <List.Item
+          title="Table Management"
+          description="View and manage tables, availability"
+          left={(props) => <List.Icon {...props} icon="table-chair" color="#4caf50" />}
+          right={(props) => <List.Icon {...props} icon="chevron-right" />}
+          onPress={() => navigation.navigate('TableManagement')}
+        />
+
+        <List.Item
+          title="Kitchen Display System"
+          description="Real-time order tracking for kitchen"
+          left={(props) => <List.Icon {...props} icon="chef-hat" color="#ff9800" />}
+          right={(props) => <List.Icon {...props} icon="chevron-right" />}
+          onPress={() => navigation.navigate('KitchenDisplay')}
+        />
+
+        {(user?.role === 'owner' || user?.role === 'manager') && (
+          <>
+            <List.Item
+              title="Inventory Management"
+              description="Stock tracking, suppliers, alerts"
+              left={(props) => <List.Icon {...props} icon="package-variant-closed" color="#1976d2" />}
+              right={(props) => <List.Icon {...props} icon="chevron-right" />}
+              onPress={() => navigation.navigate('InventoryManagement')}
+            />
+
+            <List.Item
+              title="Loyalty Program"
+              description="Customer rewards and tiers"
+              left={(props) => <List.Icon {...props} icon="medal" color="#ffd700" />}
+              right={(props) => <List.Icon {...props} icon="chevron-right" />}
+              onPress={() => navigation.navigate('LoyaltyProgram')}
+            />
+          </>
+        )}
+
+        <Divider />
+
         {user?.role === 'owner' && (
           <>
             <List.Subheader>Management</List.Subheader>
